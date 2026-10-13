@@ -13,6 +13,7 @@ from aiohttp import web
 from sqlalchemy import select
 
 from bot.api.actions import apply_action, send_message
+from bot.api.vacancies import create_vacancy, list_vacancies, update_vacancy
 from bot.db.base import session_pool
 from bot.db.models.application import Application
 from bot.db.models.interview import InterviewSession
@@ -179,6 +180,9 @@ def create_api_app(bot: Bot) -> web.Application:
     api.router.add_get("/api/applications/{app_id}", get_application)
     api.router.add_post("/api/applications/{app_id}/action", apply_action)
     api.router.add_post("/api/applications/{app_id}/message", send_message)
+    api.router.add_get("/api/vacancies", list_vacancies)
+    api.router.add_post("/api/vacancies", create_vacancy)
+    api.router.add_post("/api/vacancies/{vacancy_id}", update_vacancy)
     return api
 
 
