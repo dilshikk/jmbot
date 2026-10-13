@@ -67,7 +67,7 @@ async def main() -> None:
     scheduler.start()
 
     # API для веб-платформы (включается переменной PANEL_API_TOKEN)
-    api_runner = await start_api()
+    api_runner = await start_api(bot)
 
     # Автоповтор при временных сетевых ошибках
     retry_delay = 5
