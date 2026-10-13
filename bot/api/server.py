@@ -1,4 +1,4 @@
-"""Сервер API панели: список анкет и карточка кандидата."""
+"""Сервер API панели: список анкет, карточка кандидата, действия."""
 
 from __future__ import annotations
 
@@ -8,9 +8,11 @@ import logging
 import os
 from typing import Any
 
+from aiogram import Bot
 from aiohttp import web
 from sqlalchemy import select
 
+from bot.api.actions import apply_action, send_message
 from bot.db.base import session_pool
 from bot.db.models.application import Application
 from bot.db.models.interview import InterviewSession
@@ -170,21 +172,24 @@ async def get_application(request: web.Request) -> web.Response:
     return web.json_response({"application": detail, "interview": interview_data})
 
 
-def create_api_app() -> web.Application:
+def create_api_app(bot: Bot) -> web.Application:
     api = web.Application(middlewares=[_auth])
+    api["bot"] = bot
     api.router.add_get("/api/applications", list_applications)
     api.router.add_get("/api/applications/{app_id}", get_application)
+    api.router.add_post("/api/applications/{app_id}/action", apply_action)
+    api.router.add_post("/api/applications/{app_id}/message", send_message)
     return api
 
 
-async def start_api() -> web.AppRunner | None:
+async def start_api(bot: Bot) -> web.AppRunner | None:
     """Запускает API, если задан PANEL_API_TOKEN. Возвращает runner для остановки."""
     if not os.getenv("PANEL_API_TOKEN"):
         logger.warning("PANEL_API_TOKEN не задан — API панели отключён.")
         return None
     host = os.getenv("PANEL_API_HOST", "0.0.0.0")
     port = int(os.getenv("PANEL_API_PORT", "8091"))
-    runner = web.AppRunner(create_api_app())
+    runner = web.AppRunner(create_api_app(bot))
     await runner.setup()
     await web.TCPSite(runner, host, port).start()
     logger.warning("API панели запущен на %s:%d", host, port)
